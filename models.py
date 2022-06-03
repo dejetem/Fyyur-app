@@ -12,7 +12,7 @@ db = SQLAlchemy()
 
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venues'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city = db.Column(db.String(120), nullable=False)
@@ -31,7 +31,7 @@ class Venue(db.Model):
     past_shows_count = db.Column(db.Integer, default=0)
     artists = db.relationship('Artist', secondary='shows', lazy=True,
                         cascade="save-update, merge, delete")
-    shows = db.relationship('Show', backref=('Venue'), lazy=True,
+    shows = db.relationship('Show', backref=('venues'), lazy=True,
                         cascade="save-update, merge, delete")
     def to_dict(self):
         """ Returns a dictinary of vevenuesnues """
@@ -56,7 +56,7 @@ class Venue(db.Model):
         return f'<Venue {self.id} {self.name}>'
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artists'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
@@ -75,7 +75,7 @@ class Artist(db.Model):
     past_shows_count = db.Column(db.Integer, default=0)
     venues = db.relationship('Venue', secondary='shows' ,lazy=True,
                         cascade="save-update, merge, delete")
-    shows = db.relationship('Show', backref=('Artist'),lazy=True,
+    shows = db.relationship('Show', backref=('artists'),lazy=True,
                         cascade="save-update, merge, delete")
     def to_dict(self):
         """ Returns a dictinary of artists """
@@ -104,9 +104,9 @@ class Show(db.Model):
     __tablename__ = 'shows'
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime, nullable=False)
-    artist_id = db.Column(db.Integer,db.ForeignKey('Artist.id')
+    artist_id = db.Column(db.Integer,db.ForeignKey('artists.id')
                           ,nullable=False)
-    venue_id = db.Column(db.Integer,db.ForeignKey('Venue.id')
+    venue_id = db.Column(db.Integer,db.ForeignKey('venues.id')
                           ,nullable=False)
     upcoming = db.Column(db.Boolean, nullable=False, default=True)
     venue = db.relationship('Venue')
@@ -116,8 +116,8 @@ class Show(db.Model):
         """Returns a dictinary of artists for the show"""
         return {
             'artist_id': self.artist_id,
-            'artist_name': self.Artist.name,
-            'artist_image_link': self.Artist.image_link,
+            'artist_name': self.artists.name,
+            'artist_image_link': self.artists.image_link,
             # convert datetime to string
             'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         }
@@ -126,8 +126,8 @@ class Show(db.Model):
         """ Returns a dictinary of venues for the show """
         return {
             'venue_id': self.venue_id,
-            'venue_name': self.Venue.name,
-            'venue_image_link': self.Venue.image_link,
+            'venue_name': self.venues.name,
+            'venue_image_link': self.venues.image_link,
             # convert datetime to string
             'start_time': self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         }

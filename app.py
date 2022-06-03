@@ -15,7 +15,6 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 from datetime import datetime
-from models import db, Artist, Venue, Show
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -25,13 +24,67 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
-# TODO: connect to a local postgresql database 
+# TODO: connect to a local postgresql database
 migration = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
 
+class Venue(db.Model):
+    __tablename__ = 'venue'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500))
+    facebook_link = db.Column(db.String(120))
 
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    genres = db.Column(db.String(120),nullable=False)
+    website_link = db.Column(db.String(500))
+    seeking_talent = db.Column(db.Boolean,default=False)
+    seeking_description = db.Column(db.Text)
+    upcoming_shows_count = db.Column(db.Integer, default=0)
+    past_shows_count = db.Column(db.Integer, default=0)
+    shows = db.relationship('Show',backref='venue',lazy=True,
+                        cascade="save-update, merge, delete")
+
+class Artist(db.Model):
+    __tablename__ = 'artist'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=False)
+    genres = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500))
+    facebook_link = db.Column(db.String(120))
+
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    website_link = db.Column(db.String(500))
+    seeking_venue = db.Column(db.Boolean,default=False)
+    seeking_description = db.Column(db.Text)
+    upcoming_shows_count = db.Column(db.Integer, default=0)
+    past_shows_count = db.Column(db.Integer, default=0)
+    shows = db.relationship('Show',backref='artist',lazy=True,
+                        cascade="save-update, merge, delete")
+
+
+# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+    __tablename__ = 'shows'
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime, nullable=False)
+    artist_id = db.Column(db.Integer,db.ForeignKey('artist.id')
+                          ,nullable=False)
+    venue_id = db.Column(db.Integer,db.ForeignKey('venue.id')
+                          ,nullable=False)
+    upcoming = db.Column(db.Boolean, nullable=False, default=True)
+
+            
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -131,7 +184,7 @@ def show_venue(venue_id):
     "city": venue.city,
     "state": venue.state,
     "phone": venue.phone,
-    "website": venue.website,
+    "website_link": venue.website_link,
     "facebook_link": venue.facebook_link,
     "seeking_talent": venue.seeking_talent,
     "seeking_description": venue.seeking_description,
@@ -163,7 +216,7 @@ def create_venue_submission():
   new_venue.phone = request.form['phone']
   new_venue.facebook_link = request.form['facebook_link']
   new_venue.genres = request.form['genres']
-  new_venue.website = request.form['website']
+  new_venue.website_link = request.form['website_link']
   new_venue.image_link = request.form['image_link']
   try:
     db.session.add(new_venue)
@@ -254,7 +307,7 @@ def show_artist(artist_id):
     "city": artist.city,
     "state": artist.state,
     "phone": artist.phone,
-    "website": artist.website,
+    "website_link": artist.website_link,
     "facebook_link": artist.facebook_link,
     "seeking_venue": artist.seeking_venue,
     "seeking_description":artist.seeking_description,
@@ -300,7 +353,7 @@ def edit_artist():
     "city": artist.city,
     "state": artist.state,
     "phone": artist.phone,
-    "website": artist.website,
+    "website_link": artist.website_link,
     "facebook_link": artist.facebook_link,
     "seeking_venue": artist.seeking_venue,
     "seeking_description": artist.seeking_description,
@@ -321,7 +374,7 @@ def edit_artist_submission(artist_id):
   artist.facebook_link = request.form['facebook_link']
   artist.genres = request.form['genres']
   artist.image_link = request.form['image_link']
-  artist.website = request.form['website']
+  artist.website_link = request.form['website_link']
   try:
     db.session.commit()
     flash("Artist {} is updated successfully".format(artist.name))
@@ -345,7 +398,7 @@ def edit_venue():
     "city": venue.city,
     "state": venue.state,
     "phone": venue.phone,
-    "website": venue.website,
+    "website_link": venue.website_link,
     "facebook_link": venue.facebook_link,
     "seeking_talent": venue.seeking_talent,
     "seeking_description": venue.seeking_description,
@@ -367,13 +420,14 @@ def edit_venue_submission(venue_id):
   venue.facebook_link = request.form['facebook_link']
   venue.genres = request.form['genres']
   venue.image_link = request.form['image_link']
-  venue.website = request.form['website']
+  venue.website_link = request.form['website_link']
   try:
+    db.session.add(venue)
     db.session.commit()
     flash('Venue ' + request.form['name'] + ' was successfully updated!')
   except:
     db.session.rollback()
-    flash('An error occurred. Venue ' + new_venue.name + ' could not be updated.')
+    flash('An error occurred. Venue ' + venue.name + ' could not be updated.')
   finally:
     db.session.close()
   return redirect(url_for('show_venue', venue_id=venue_id))
